@@ -9,7 +9,7 @@ use App\Exception\LoginException;
 use App\Model\InfoBese;
 use Hyperf\DbConnection\Db;
 use Hyperf\Di\Annotation\Inject;
-use Hyperf\HttpServer\Contract\RequestInterface;
+use Hyperf\Utils\Context;
 
 class UserService implements UserServiceInterface
 {
@@ -20,18 +20,13 @@ class UserService implements UserServiceInterface
      */
     private $visitorService;//游客操作
 
-    /**
-     * @Inject
-     * @var RequestInterface
-     */
-    private $request;
-
 
     /**
      * @Inject
      * @var ActionUserServiceInterface
      */
     private $actionUserService;
+
 
     // 创建用户返回数据
     public $returnCreateUserRs = [
@@ -76,19 +71,19 @@ class UserService implements UserServiceInterface
         $this->recordUid( $param );
 
         //返回新用户注册奖励
-        $registRewardConfig = config('registreward');
-        $gameType = $this->request->input('gamelang', config('gametype') );//默认游戏语言
-        if( isset( $registRewardConfig[$gameType][$lid] ) )
+        $gameType = Context::get( CommonCode::GAMELANG );//默认游戏语言
+        $registRewardConfig = config('registreward.'.$gameType);
+        if( isset( $registRewardConfig[$lid] ) )
         {
-            $registerReward = $registRewardConfig[$gameType][$lid];//奖励
+            $registerReward = $registRewardConfig[$lid]; //奖励
 
             //注册发奖
             $data = [
-                'uid' => $uid,
+                'uid'   => $uid,
                 'money' => $registerReward['money']['num'],
                 'actid' => $registerReward['money']['actid'],
             ];
-//            $rs = $this->actionUserService->updateUserMoney($data);
+            $rs = $this->actionUserService->updateUserMoney( $data );
 //            var_dump($rs);
         }
         return $this->returnCreateUserRs;
@@ -154,7 +149,7 @@ class UserService implements UserServiceInterface
         }
 
         //设置初始值
-        $gameType = $this->request->input('gamelang', config('gametype') );//默认游戏语言
+        $gameType = Context::get( CommonCode::GAMELANG );//默认游戏语言
         $initMoney = config('initMoney');
         $money = $initMoney[$gameType][$lid] ?? config('defaultMoney');
 

@@ -32,19 +32,18 @@ class ActionUserService implements ActionUserServiceInterface
         {
             throw new GameException( ErrorCode::UPDATEMONEYMISSPARAM );
         }
-        echo $money."=============\n";
         //扣除判断是否有足够的游戏币
         if ( $money > CommonCode::DBDEFAULTVAL )
         {
+            echo "=======================";
             $gameInfo = $this->getGameInfo( $uid );
-//            if ($gameInfo['money'] == 0)
-//            {
-//
-//                return false;
-//            }
-//            if ($gameInfo['money'] < ($money*-1)) {
-//                return false;
-//            }
+            if ($gameInfo['money'] == 0)
+            {
+                return false;
+            }
+            if ($gameInfo['money'] < ($money*-1)) {
+                return false;
+            }
         }
 
     }
@@ -56,6 +55,7 @@ class ActionUserService implements ActionUserServiceInterface
     public function getGameInfo( $uid )
     {
         $uid = intval($uid);
-        $this->socketService->getGameInfo($uid);
+        echo $uid."===================\n";
+        $this->socketService->getGameInfo( $uid );
     }
 }

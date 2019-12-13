@@ -28,6 +28,11 @@ class SwooleService extends SwooleServiceAbstract
         $this->config = $config;
     }
 
+    public function getConfig()
+    {
+        return $this->config;
+    }
+
     /**
      * 发送数据
      * @param $data

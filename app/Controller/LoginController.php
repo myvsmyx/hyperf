@@ -7,9 +7,10 @@ namespace App\Controller;
 use App\Constants\CommonCode;
 use App\Constants\ErrorCode;
 use App\Exception\LoginException;
+use App\Service\VisitorServiceInterface;
 use App\Service\UserServiceInterface;
 use Hyperf\Di\Annotation\Inject;
-use App\Service\VisitorServiceInterface;
+use Hyperf\Utils\Context;
 
 class LoginController extends AbstractController
 {
@@ -18,13 +19,13 @@ class LoginController extends AbstractController
      * @Inject
      * @var VisitorServiceInterface
      */
-    private $visitorService;//游客操作
+    private $visitorService;
 
     /**
      * @Inject
      * @var UserServiceInterface
      */
-    private $userService; //用户相关操作
+    private $userService;
 
     /**
      * 登录
@@ -32,16 +33,19 @@ class LoginController extends AbstractController
      */
     public function index()
     {
-        return 111111111;
+        //设置语言
+        $lang = $this->request->input('lang', CommonCode::GAMETH);
+        Context::set( CommonCode::GAMELANG, $lang );
+
         //必传参数
-        $lid = $this->request->input('lid', 0);
-        if( !CommonCode::allowLoginLid($lid) )
+        $lid = $this->request->input('lid', CommonCode::DBDEFAULTVAL );
+        if( !CommonCode::allowLoginLid( $lid ) )
         {
             throw new LoginException(ErrorCode::LIBERROR );
         }
 
         //验证签名
-        $checkSignRs = $this->checkLoginSig($this->request);
+        $checkSignRs = $this->checkLoginSig( $this->request );
         if( !$checkSignRs )
         {
             throw new LoginException(ErrorCode::LOGINSIGNERROR );
@@ -83,6 +87,7 @@ class LoginController extends AbstractController
             $createParams = $this->request->all();
             $createParams['suid'] = $suid;
             $createUserInfo = $this->userService->createUser( $createParams );
+            return $createUserInfo;
         }
         return $uid;
     }

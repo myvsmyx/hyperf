@@ -31,6 +31,7 @@ class CommonCode extends AbstractConstants
     CONST PIDIOS = 2; // IOS
 
     /**************目前游戏的语言版本***************/
+    CONST GAMELANG = 'GAMELANG';
     CONST GAMETH = 'th';
     CONST GAMEID = 'id';
     CONST GAMEEN = 'en';

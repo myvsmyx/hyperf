@@ -6,7 +6,7 @@ namespace App\Service;
 use App\Constants\CommonCode;
 use App\Helper\Socketpacket;
 use Hyperf\Di\Annotation\Inject;
-use Hyperf\HttpServer\Contract\RequestInterface;
+use Hyperf\Utils\Context;
 
 class SocketService implements SocketServiceInterface
 {
@@ -23,12 +23,6 @@ class SocketService implements SocketServiceInterface
         'game'      => 5,
         'point'     => 6,
     );
-
-    /**
-     * @Inject
-     * @var RequestInterface
-     */
-    private $request;
 
     /**
      * @Inject
@@ -119,14 +113,18 @@ class SocketService implements SocketServiceInterface
         //传递配置参数 __invoke实现
         $this->swooleservice($moneyServerConfig);
 
-        //发送数据
-        $sendRs = $this->swooleservice->sendData($packetBuffer);
-        var_dump($sendRs);
-        //接收数据
-        $recvRs = $this->swooleservice->recvData();
-        var_dump($sendRs);
+        $config = $this->swooleservice->getConfig();
+        var_dump($config);
 
-        return $sendRs;
+//        //发送数据
+//        $sendRs = $this->swooleservice->sendData($packetBuffer);
+//        var_dump($sendRs);
+//        //接收数据
+//        $recvRs = $this->swooleservice->recvData();
+//        var_dump($recvRs);
+//
+//        echo "OK\n";
+//        return $recvRs;
     }
 
     /**
@@ -136,7 +134,7 @@ class SocketService implements SocketServiceInterface
     protected function getMoneyServerConfig( $uid )
     {
         $id = $uid % 10;
-        $gameType = $this->request->input('gamelang', config('gametype') );
+        $gameType = Context::get( CommonCode::GAMELANG );
         $ip = ( $gameType != CommonCode::GAMETHA ) ? config('gameinfo.ip') : config('gameinfo.ip_'.$gameType);
         $port = config('gameinfo.moneyport'.$id);
         $config = [
