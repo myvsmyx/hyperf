@@ -3,6 +3,9 @@ declare (strict_types=1);
 
 namespace App\Service;
 
+use App\Constants\ErrorCode;
+use App\Exception\GameException;
+
 /**
  * Swoole收发包类
  * Class SwooleService
@@ -41,7 +44,12 @@ class SwooleService extends SwooleServiceAbstract
     public function sendData( $data )
     {
         $this->client = $this->getSwooleClient();
-        return $this->client->send($data);
+        $sendRs = $this->client->send($data);
+        if( $sendRs === false )
+        {
+            throw new GameException( ErrorCode::SWOOLESENDFAIL );
+        }
+        return $sendRs;
     }
 
     /**
@@ -52,6 +60,10 @@ class SwooleService extends SwooleServiceAbstract
     {
         $this->client = $this->getSwooleClient();
         $data = $this->client->recv();
+        if( $data === false )
+        {
+            throw new GameException( ErrorCode::SWOOLERECVFAIL );
+        }
         return $data;
     }
 }

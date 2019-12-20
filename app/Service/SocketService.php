@@ -4,6 +4,8 @@ declare (strict_types=1);
 namespace App\Service;
 
 use App\Constants\CommonCode;
+use App\Constants\ErrorCode;
+use App\Exception\GameException;
 use App\Helper\Socketpacket;
 use Hyperf\Di\Annotation\Inject;
 use Hyperf\Utils\Context;
@@ -16,6 +18,16 @@ class SocketService implements SocketServiceInterface
 
     //玩家的游戏信息字段
     private $gameField = array(
+        'money'     => 1,
+        'safebox'   => 2,
+        'gold'      => 3,
+        'exp'       => 4,
+        'game'      => 5,
+        'point'     => 6,
+    );
+
+    //server返回的字段
+    private $field = array(
         'money'     => 1,
         'safebox'   => 2,
         'gold'      => 3,
@@ -65,9 +77,7 @@ class SocketService implements SocketServiceInterface
         {
             return false;
         }
-
-        //获取配置
-        $moneyServerConfig = $this->getMoneyServerConfig( $uid );
+        $uid = intval($uid);
 
         //打包
         $this->socketpacket->init();
@@ -81,10 +91,32 @@ class SocketService implements SocketServiceInterface
         $this->socketpacket->WriteEnd();
         $packetBuffer = $this->socketpacket->GetPacketBuffer();
 
-        //传递配置参数 __invoke实现
-        $this->swooleservice($moneyServerConfig);
-        $rs = $this->swooleservice->sendData($packetBuffer);
-        var_dump($rs);
+        //获取配置
+        $moneyServerConfig = $this->getMoneyServerConfig( $uid );
+
+        //设置配置
+        $this->swooleservice->setConfig( $moneyServerConfig );
+
+        //发送数据
+        $this->swooleservice->sendData($packetBuffer);
+
+        //接收数据
+        $recvRs = $this->swooleservice->recvData();
+
+        //解包
+        $rs = $this->parsePacket( $recvRs );
+        if( !$rs )
+        {
+            throw new GameException( ErrorCode::UNPACKETFAIL );
+        }
+
+        $this->socketpacket->ReadInt();
+        $ret = $this->socketpacket->ReadByte();
+        if ( $ret != CommonCode::DBDEFAULTVAL )
+        {
+            return CommonCode::DBDEFAULTVAL;
+        }
+        return $this->socketpacket->ReadInt64();
     }
 
     /**
@@ -94,11 +126,9 @@ class SocketService implements SocketServiceInterface
     public function getGameInfo( $uid )
     {
         $uid = intval($uid);
-        //获取配置
-        $moneyServerConfig = $this->getMoneyServerConfig( $uid );
-        $size = count( $this->gameField );
 
         //打包
+        $size = count( $this->gameField );
         $this->socketpacket->init();
         $this->socketpacket->WriteBegin($this->cmd['GETPERINFO']);
         $this->socketpacket->WriteInt($uid);
@@ -110,21 +140,59 @@ class SocketService implements SocketServiceInterface
         $this->socketpacket->WriteEnd();
         $packetBuffer = $this->socketpacket->GetPacketBuffer();
 
-        //传递配置参数 __invoke实现
-        $this->swooleservice($moneyServerConfig);
+        //获取配置
+        $moneyServerConfig = $this->getMoneyServerConfig( $uid );
 
-        $config = $this->swooleservice->getConfig();
-        var_dump($config);
+        //设置配置
+        $this->swooleservice->setConfig( $moneyServerConfig );
 
-//        //发送数据
-//        $sendRs = $this->swooleservice->sendData($packetBuffer);
-//        var_dump($sendRs);
-//        //接收数据
-//        $recvRs = $this->swooleservice->recvData();
-//        var_dump($recvRs);
-//
-//        echo "OK\n";
-//        return $recvRs;
+        //发送数据
+        $this->swooleservice->sendData($packetBuffer);
+
+        //接收数据
+        $recvRs = $this->swooleservice->recvData();
+
+        //解包
+        $rs = $this->parsePacket( $recvRs );
+        if( !$rs )
+        {
+            throw new GameException( ErrorCode::UNPACKETFAIL );
+        }
+
+        $this->socketpacket->ReadInt();
+        $ret = $this->socketpacket->ReadByte();
+        if ( $ret != CommonCode::DBDEFAULTVAL )
+        {
+            return [];
+        }
+
+        $size = $this->socketpacket->ReadByte();
+        $returnData = [];
+        $server_value = array_flip( $this->field );
+        for ($i=0; $i <$size ; $i++) {
+            $type = $this->socketpacket->ReadByte();
+            if( !isset( $server_value[$type] ) )
+            {
+                continue;
+            }
+            $fieldName = strtolower( $server_value[$type] );
+            switch ( $fieldName ) {
+                case 'game':
+                    $buff = $this->socketpacket->ReadString();
+                    $returnData[ $fieldName ] = empty($buff) ? array() : json_decode($buff, true);
+                    break;
+                case 'money':
+                case 'safebox':
+                case 'gold':
+                case 'point':
+                    $returnData[ $fieldName ] = $this->socketpacket->ReadInt64();
+                    break;
+                case 'exp':
+                    $returnData[ $fieldName ] = $this->socketpacket->ReadInt();
+                    break;
+            }
+        }
+        return $returnData;
     }
 
     /**
@@ -139,10 +207,20 @@ class SocketService implements SocketServiceInterface
         $port = config('gameinfo.moneyport'.$id);
         $config = [
             'ip' => $ip,
-            'port' => $port,
+            'port' => intval( $port ),
             'timeout' => $this->timeout,
         ];
         $this->moneyServerConfig = $config;
         return $config;
+    }
+
+    /**
+     * 解包数据
+     * @param string $packetBuffer
+     */
+    protected function parsePacket( $packetBuffer = '' )
+    {
+        $rs = $this->socketpacket->parsePacket( $packetBuffer );
+        return $rs === CommonCode::DBDEFAULTVAL ? true : false;
     }
 }

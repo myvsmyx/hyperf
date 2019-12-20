@@ -17,6 +17,13 @@ class ActionUserService implements ActionUserServiceInterface
      */
     private $socketService;
 
+
+    /**
+     * @Inject
+     * @var TuserServiceInterface
+     */
+    private $tuserService;
+
     /**
      * 更新玩家游戏币
      * @param array $param
@@ -33,19 +40,22 @@ class ActionUserService implements ActionUserServiceInterface
             throw new GameException( ErrorCode::UPDATEMONEYMISSPARAM );
         }
         //扣除判断是否有足够的游戏币
-        if ( $money > CommonCode::DBDEFAULTVAL )
+        if ( $money < CommonCode::DBDEFAULTVAL )
         {
-            echo "=======================";
             $gameInfo = $this->getGameInfo( $uid );
-            if ($gameInfo['money'] == 0)
+            if ( !isset($gameInfo['money']) || $gameInfo['money'] == CommonCode::DBDEFAULTVAL )
             {
                 return false;
             }
-            if ($gameInfo['money'] < ($money*-1)) {
+            if ( $gameInfo['money'] < ($money*-1) )
+            {
                 return false;
             }
         }
-
+        //获取用户信息
+        $dbRs = $this->tuserService->getUserBaseInfo( $uid );
+        $gid = $dbRs['gid'];
+        return $this->socketService->updateMoney( $uid, $money, $actid, $gid, $desc);
     }
 
     /**
@@ -55,7 +65,6 @@ class ActionUserService implements ActionUserServiceInterface
     public function getGameInfo( $uid )
     {
         $uid = intval($uid);
-        echo $uid."===================\n";
-        $this->socketService->getGameInfo( $uid );
+        return $this->socketService->getGameInfo( $uid );
     }
 }

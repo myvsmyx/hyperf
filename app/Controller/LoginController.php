@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Constants\CommonCode;
 use App\Constants\ErrorCode;
 use App\Exception\LoginException;
+use App\Helper\CommonHelper;
 use App\Service\VisitorServiceInterface;
 use App\Service\UserServiceInterface;
 use Hyperf\Di\Annotation\Inject;
@@ -14,6 +15,28 @@ use Hyperf\Utils\Context;
 
 class LoginController extends AbstractController
 {
+
+    //uid
+    protected $uid = null;
+
+    //标识：是否为新建用户
+    protected $isCreate = CommonCode::DBDEFAULTVAL;
+
+    //标识：今日首次登陆
+    protected $debutToday = CommonCode::DBDEFAULTVAL;
+
+    //返回客户端参数
+    protected $returnToClient = [
+        'hallip' => '',
+        'backupHallIp' => [],
+        'user' => [],
+        'token' => '',
+        'game_list' => [],
+        'api_url' => '',
+        'img_url' => '',
+        'upload_url' => '',
+        'registerReward' => [],
+    ];
 
     /**
      * @Inject
@@ -55,13 +78,29 @@ class LoginController extends AbstractController
         switch ($lid)
         {
             case CommonCode::LIDPHONE:
-                $data = $this->loginByPhone($this->request);
+                $uid = $this->loginByPhone($this->request);
                 break;
             default:
-                $data = $this->loginByGuest($this->request);
+                $uid = $this->loginByGuest($this->request);
                 break;
         }
-        return $this->response->json($data);
+
+        //获取用户信息和游戏信息
+        $userInfo = $this->userService->getUserBaseGameInfo( $uid );
+        $status = $userInfo['status'] ?? CommonCode::ACCOUNTUNAVAILABLE;
+
+        //判断帐号被封情况,被封则禁止登陆
+        $checkAccountStatus = $this->checkBlockadeStatus( $status );
+        if( !$checkAccountStatus )
+        {
+            throw new LoginException(ErrorCode::ACCOUNTUNAVAILABLE );
+        }
+
+        //判断是否为今日是否为首次登陆
+        $this->checkDebutToday( $userInfo['ltime'] );
+
+
+        return $this->response->json( $userInfo );
     }
 
     /**
@@ -69,7 +108,8 @@ class LoginController extends AbstractController
      */
     protected function loginByPhone()
     {
-
+        $uid = 1;
+        return $uid;
     }
 
     /**
@@ -86,12 +126,24 @@ class LoginController extends AbstractController
             //注册操作
             $createParams = $this->request->all();
             $createParams['suid'] = $suid;
-            $createUserInfo = $this->userService->createUser( $createParams );
-            return $createUserInfo;
+            $this->createUser( $createParams );
+            $uid = $this->uid;
         }
         return $uid;
     }
 
+    /**
+     * 注册用户
+     * @param array $param
+     */
+    protected function createUser( $param = [] )
+    {
+        $createUserInfo = $this->userService->createUser( $param );
+        $this->uid = $createUserInfo['uid'];
+        unset($createUserInfo['uid']);
+        $this->returnToClient['registerReward'] = $createUserInfo;
+        $this->isCreate = CommonCode::TRUEVALUE;
+    }
 
     /**
      * 验证登录签名
@@ -124,5 +176,27 @@ class LoginController extends AbstractController
     private function encryptionImei( $imei = '' )
     {
         return md5($imei.CommonCode::ENCRYPTIONIMEI);
+    }
+
+    /**
+     * 检查账号被封锁情况
+     * @param $status
+     */
+    private function checkBlockadeStatus( $status )
+    {
+        return $status == CommonCode::ACCOUNTAVAILABLE ? true : false;
+    }
+
+
+    /**
+     * 检查是否为今日首次登陆
+     */
+    private function checkDebutToday( $loginTime = '' )
+    {
+        $time = CommonHelper::localStrToTime( 'today' );
+        if( $time > $loginTime )
+        {
+            $this->debutToday = CommonCode::ACCOUNTUNAVAILABLE;
+        }
     }
 }

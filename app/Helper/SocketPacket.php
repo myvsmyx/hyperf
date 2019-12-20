@@ -3,6 +3,10 @@
 declare(strict_types=1);
 namespace App\Helper;
 
+use App\Constants\CommonCode;
+use App\Constants\ErrorCode;
+use App\Exception\GameException;
+
 /**
  * 网络打包解包类定义文件
  * Class Socketpacket
@@ -173,22 +177,15 @@ class Socketpacket
 
         if(($this->m_packetSize < $this->PACKET_HEADER_SIZE) || ($this->m_packetSize > $this->PACKET_BUFFER_SIZE))
         {
-            throw new \Exception('包头长度不对,该包头长度为' . $this->m_packetSize . ' 包大小为' . strlen($packet_buff));
-            return 1;
+            throw new GameException( ErrorCode::PACKETHEADERLENERR );
         }
         if( $arr['Id1'] != ord('L') || $arr['Id2'] != ord('W')){
-            throw new \Exception('包头字符串错误');
-            return 2;
+            throw new GameException( ErrorCode::PACKETHEADERERR );
         }
         $this->m_CmdType = $arr['Cmd'];
-        // if( $this->m_CmdType <= 0 || $this->m_CmdType > 39321)
-        // {
-        // 	throw new \Exception('命令字错误');
-        // 	return 3;
-        // }
         $this->m_cbCheckCode  = $arr['Code'];
         $this->m_packetBuffer = substr($this->m_packetBuffer, $this->PACKET_HEADER_SIZE);
-        return 0;
+        return CommonCode::DBDEFAULTVAL;
     }
     /**
      * 设置包内容

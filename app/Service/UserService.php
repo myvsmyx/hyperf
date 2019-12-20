@@ -5,6 +5,7 @@ namespace App\Service;
 
 use App\Constants\CommonCode;
 use App\Constants\ErrorCode;
+use App\Exception\GameException;
 use App\Exception\LoginException;
 use App\Model\InfoBese;
 use Hyperf\DbConnection\Db;
@@ -83,10 +84,45 @@ class UserService implements UserServiceInterface
                 'money' => $registerReward['money']['num'],
                 'actid' => $registerReward['money']['actid'],
             ];
-            $rs = $this->actionUserService->updateUserMoney( $data );
-//            var_dump($rs);
+            $this->actionUserService->updateUserMoney( $data );
+            $this->returnCreateUserRs['addMoney']   = $registerReward['money']['num'] ?? 0;
+            $this->returnCreateUserRs['addPoint']   = $registerReward['point']['num'] ?? 0;
+            $this->returnCreateUserRs['gift']       = $registerReward['gift'] ?? 0;
+            $this->returnCreateUserRs['addGold']    = $registerReward['gold']['num'] ?? 0;
         }
+        $this->returnCreateUserRs['uid'] = $uid;
         return $this->returnCreateUserRs;
+    }
+
+    /**
+     * 获取玩家的基本信息和游戏信息
+     * @param int $uid
+     * @return mixed|void
+     */
+    public function getUserBaseGameInfo( $uid = 0 )
+    {
+        if( empty($uid) )
+        {
+            throw new GameException( ErrorCode::SERVER_ERROR );
+        }
+
+        //获取游戏信息
+        $gameInfo = $this->actionUserService->getGameInfo( $uid );
+
+        //获取基本信息
+        $baseInfo = $this->getUserBaseInfo( $uid );
+        return array_merge( $gameInfo, $baseInfo );
+    }
+
+    /**
+     * 获取用户信息
+     * @param int $uid
+     * @return mixed|void
+     */
+    public function getUserBaseInfo( $uid = 0 )
+    {
+        $table = 'info'.$uid%100;
+        return DB::connection('user')->table($table)->where('uid', '=', $uid)->first();
     }
 
     /**
@@ -178,11 +214,15 @@ class UserService implements UserServiceInterface
         }
         $lid = $param['lid'];
         $uid = $param['uid'];
-        switch ( $lid )
+//        switch ( $lid )
+//        {
+//            case CommonCode::LIDGUEST:
+//                $this->visitorService->recordUidSuid( $uid, $param['suid'] );
+//                break;
+//        }
+        if ( $lid == CommonCode::LIDGUEST )
         {
-            case CommonCode::LIDGUEST:
-                $this->visitorService->recordUidSuid( $uid, $param['suid'] );
-                break;
+            $this->visitorService->recordUidSuid( $uid, $param['suid'] );
         }
     }
 }

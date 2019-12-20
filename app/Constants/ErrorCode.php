@@ -25,11 +25,13 @@ class ErrorCode extends AbstractConstants
      */
     const SERVER_ERROR = 500;
 
-    const LIBERROR = 4; //lid错误
-
     const LOGINSIGNERROR = 1; //登录签名错误
 
-    const DBINFONOTFOUND = 10; //数据库配置为找到
+    const LIBERROR = 4; //lid错误
+
+    const ACCOUNTUNAVAILABLE = 8; //账号禁止登陆
+
+    const DBINFONOTFOUND = 10; //数据库配置未找到
 
     const CREATEUSERPARAMERR = 11; //创建用户参数错误
 
@@ -43,7 +45,19 @@ class ErrorCode extends AbstractConstants
 
     const SWOOLECONNECTFAIL = 16; //swoole连接失败
 
+    const SWOOLESENDFAIL = 17; //swoole发送失败
+
+    const SWOOLERECVFAIL = 18; //swoole接收失败
+
+    const PACKETHEADERLENERR = 19; //包头长度不对
+
+    const PACKETHEADERERR = 20; //包头错误
+
+    const UNPACKETFAIL = 21; //解包失败
+
+
     static $errorMsg = [
+        self::SERVER_ERROR => 'parameter error',
         self::LIBERROR => 'lid error',
         self::LOGINSIGNERROR => 'sig error',
         self::DBINFONOTFOUND => 'db_config not found',
@@ -53,6 +67,12 @@ class ErrorCode extends AbstractConstants
         self::UPDATEMONEYMISSPARAM => 'updatemoney missing param',
         self::SWOOLEIPORPORTMISS => 'missing param for swoole',
         self::SWOOLECONNECTFAIL => 'swoole connected fail',
+        self::SWOOLESENDFAIL => 'swoole send fail',
+        self::SWOOLERECVFAIL => 'swoole recv fail',
+        self::PACKETHEADERLENERR => 'packet header length fail',
+        self::PACKETHEADERERR => 'packet header fail',
+        self::UNPACKETFAIL => 'unpacket fail',
+        self::ACCOUNTUNAVAILABLE => 'account unavailable',
     ];
 
     /**

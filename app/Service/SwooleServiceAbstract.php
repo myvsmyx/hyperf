@@ -11,7 +11,7 @@ abstract class SwooleServiceAbstract
     //单例对象
     private $client;
     //配置信息
-    protected $config;
+    protected $config = '';
     //默认超时时间
     private $timeOut = 2.0;
 
@@ -23,6 +23,11 @@ abstract class SwooleServiceAbstract
         if( is_object($this->client) )
         {
             return true;
+        }
+
+        if( empty($this->config) )
+        {
+            throw new GameException( ErrorCode::SWOOLEIPORPORTMISS );
         }
 
         $this->client = new \Swoole\Client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_SYNC);

@@ -15,5 +15,6 @@ return [
     \App\Service\UserServiceInterface::class => \App\Service\UserService::class,
     \App\Service\ActionUserServiceInterface::class => \App\Service\ActionUserService::class,
     \App\Service\SocketServiceInterface::class => \App\Service\SocketService::class,
-    \App\Service\SwooleService::class => \App\Service\SwooleServiceFactory::class,
+    \App\Service\SwooleServiceAbstract::class => \App\Service\SwooleService::class,
+    \App\Service\TuserServiceInterface::class =>  \App\Service\TuserService::class,
 ];

@@ -11,4 +11,18 @@ interface UserServiceInterface
      * @return mixed
      */
     public function createUser( array $param );
+
+    /**
+     * 获取玩家的基本信息和游戏信息
+     * @param int $uid
+     * @return mixed
+     */
+    public function getUserBaseGameInfo ( int $uid );
+
+    /**
+     * 获取用户基本信息
+     * @param int $uid
+     * @return mixed
+     */
+    public function getUserBaseInfo( int $uid );
 }

@@ -35,4 +35,11 @@ return [
         'tha' => [ 1 => 120000, 2 => 80000 ],
     ],
     'defaultMoney' => 10000,//出现无法找到initMoney对应的数据时候，使用
+
+    //时区设置
+    'th' => 'Asia/Bangkok',
+    'tha' => 'Asia/Bangkok',
+    'id' => 'Asia/Jakarta',
+    'en' => 'Etc/GMT',
+    'cn' => 'Asia/Shanghai',
 ];
