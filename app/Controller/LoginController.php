@@ -6,12 +6,14 @@ namespace App\Controller;
 
 use App\Constants\CommonCode;
 use App\Constants\ErrorCode;
+use App\Event\UpdateUserLoginInfo;
 use App\Exception\LoginException;
 use App\Helper\CommonHelper;
 use App\Service\VisitorServiceInterface;
 use App\Service\UserServiceInterface;
 use Hyperf\Di\Annotation\Inject;
 use Hyperf\Utils\Context;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 class LoginController extends AbstractController
 {
@@ -19,11 +21,20 @@ class LoginController extends AbstractController
     //uid
     protected $uid = null;
 
+    //suid
+    protected $suid = null;
+
     //标识：是否为新建用户
     protected $isCreate = CommonCode::DBDEFAULTVAL;
 
     //标识：今日首次登陆
     protected $debutToday = CommonCode::DBDEFAULTVAL;
+
+    /**
+     * @Inject
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
 
     //返回客户端参数
     protected $returnToClient = [
@@ -99,6 +110,8 @@ class LoginController extends AbstractController
         //判断是否为今日是否为首次登陆
         $this->checkDebutToday( $userInfo['ltime'] );
 
+        //更新用户登录信息
+
 
         return $this->response->json( $userInfo );
     }
@@ -129,6 +142,7 @@ class LoginController extends AbstractController
             $this->createUser( $createParams );
             $uid = $this->uid;
         }
+        $this->suid = $suid;
         return $uid;
     }
 
@@ -198,5 +212,21 @@ class LoginController extends AbstractController
         {
             $this->debutToday = CommonCode::ACCOUNTUNAVAILABLE;
         }
+    }
+
+    /**
+     * 事件更新用户登录信息
+     */
+    private function updateUserLoginInfo()
+    {
+        $data = [
+            'uid'   => $this->uid,
+            'suid'  => $this->suid,
+            'gid'   => $this->request->input('gid', ''),
+            'pid'   => $this->request->input('pid', ''),
+            'ltime' => time(),
+            'version' => $this->request->input('version', '1.0.0'),
+        ];
+        $this->eventDispatcher->dispatch( new UpdateUserLoginInfo($data) );
     }
 }
