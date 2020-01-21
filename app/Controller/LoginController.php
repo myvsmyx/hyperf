@@ -6,14 +6,12 @@ namespace App\Controller;
 
 use App\Constants\CommonCode;
 use App\Constants\ErrorCode;
-use App\Event\UpdateUserLoginInfo;
 use App\Exception\LoginException;
 use App\Helper\CommonHelper;
 use App\Service\VisitorServiceInterface;
 use App\Service\UserServiceInterface;
 use Hyperf\Di\Annotation\Inject;
 use Hyperf\Utils\Context;
-use Psr\EventDispatcher\EventDispatcherInterface;
 
 class LoginController extends AbstractController
 {
@@ -29,12 +27,6 @@ class LoginController extends AbstractController
 
     //标识：今日首次登陆
     protected $debutToday = CommonCode::DBDEFAULTVAL;
-
-    /**
-     * @Inject
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
 
     //返回客户端参数
     protected $returnToClient = [
@@ -111,7 +103,10 @@ class LoginController extends AbstractController
         $this->checkDebutToday( $userInfo['ltime'] );
 
         //更新用户登录信息
+        $this->updateUserLoginInfo();
 
+        //老用户今日首登奖励
+        $this->veteranPlayerReward( $uid, $userInfo['ltime'] );
 
         return $this->response->json( $userInfo );
     }
@@ -227,6 +222,24 @@ class LoginController extends AbstractController
             'ltime' => time(),
             'version' => $this->request->input('version', '1.0.0'),
         ];
-        $this->eventDispatcher->dispatch( new UpdateUserLoginInfo($data) );
+        $this->userService->updateUserLoginInfoEvent( $data );
+    }
+
+    /**
+     * 老玩家回归奖励
+     */
+    private function veteranPlayerReward( $uid = 0, $ltime = '' )
+    {
+        if( $this->isCreate == CommonCode::DBDEFAULTVAL && $this->debutToday == CommonCode::TRUEVALUE )
+        {
+            $curTime = time();
+            $lossDays = config('lossdays', CommonCode::LOSSDAYS );
+            //流失玩家回归
+            if( ( $curTime - $ltime ) > ( $lossDays * 86400 ) )
+            {
+                $version = $this->request->input('version', '1.0.0');
+                $this->userService->userReturnReward( $uid, $version );
+            }
+        }
     }
 }

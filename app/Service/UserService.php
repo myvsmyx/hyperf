@@ -5,12 +5,15 @@ namespace App\Service;
 
 use App\Constants\CommonCode;
 use App\Constants\ErrorCode;
+use App\Event\UpdateUserLoginInfo;
 use App\Exception\GameException;
 use App\Exception\LoginException;
+use App\Helper\CommonHelper;
 use App\Model\InfoBese;
 use Hyperf\DbConnection\Db;
 use Hyperf\Di\Annotation\Inject;
 use Hyperf\Utils\Context;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 class UserService implements UserServiceInterface
 {
@@ -27,6 +30,12 @@ class UserService implements UserServiceInterface
      * @var ActionUserServiceInterface
      */
     private $actionUserService;
+
+    /**
+     * @Inject
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
 
 
     // 创建用户返回数据
@@ -123,6 +132,36 @@ class UserService implements UserServiceInterface
     {
         $table = 'info'.$uid%100;
         return DB::connection('user')->table($table)->where('uid', '=', $uid)->first();
+    }
+
+    /**
+     * 更新玩家登录信息
+     * @param array $param
+     * @return mixed|void
+     */
+    public function updateUserLoginInfoEvent( $param = [] )
+    {
+        $this->eventDispatcher->dispatch( new UpdateUserLoginInfo($param) );
+    }
+
+    /**
+     * 老用户回归奖励
+     * @param int $uid
+     * @param string $version
+     * @return mixed|void
+     */
+    public function userReturnReward($uid = 0, $version = '')
+    {
+        $config = CommonHelper::getReturnReward($version);
+        if ( $config === false || !is_array($config) )
+        {
+            return;
+        }
+        foreach ( $config as $type => $value )
+        {
+            
+        }
+
     }
 
     /**

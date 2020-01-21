@@ -50,6 +50,8 @@ class CommonCode extends AbstractConstants
     const DBDEFAULTVAL = 0; //入库默认值0
     const TRUEVALUE = 1; //条件为真值
     const INFOBESTUID = 5000000; //uid超过此值的用户往th_best.infobest里面查询
+    const LOSSDAYS = 7; //用户流失天数
+    const LOGLEVEL = ['debug', 'info', 'error']; //日志的等级
 
     /**
      * 判断是否是允许登录的lid类型

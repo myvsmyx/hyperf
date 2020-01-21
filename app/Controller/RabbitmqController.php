@@ -4,58 +4,54 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Amqp\Consumer\TaskConsumer;
-use App\Amqp\Producer\TaskProducer;
-use Hyperf\Amqp\Consumer;
-use Hyperf\Amqp\Producer;
+use App\Helper\CommonHelper;
+use App\Log\Log;
 use Hyperf\Di\Annotation\Inject;
+
+use Psr\Container\ContainerInterface;
+use Hyperf\Logger\LoggerFactory;
 
 class RabbitmqController extends AbstractController
 {
 
     /**
-     * @Inject
-     * @var TaskProducer
+     * @var \Psr\Log\LoggerInterface
      */
-    private $taskProducer;
-
+    protected $logger;
 
     /**
      * @Inject
-     * @var Producer
+     * @var Log
      */
-    private $producer;
-
+    private $log;
 
     /**
      * @Inject
-     * @var Consumer;
+     * @var LoggerFactory
      */
-    private $consumer;
+    protected $loggerfactory;
 
 
-    /**
-     * @Inject
-     * @var TaskConsumer
-     */
-    private $taskConsumer;
-
-
-    public function index()
+    public function test()
     {
-        $this->taskProducer->setTask('First');
-        $result = $this->producer->produce( $this->taskProducer );
-        echo "Producer Set Task: \n";
-        var_dump($result);
+        $this->logger = $this->loggerfactory->get('log', 'default');
+        $this->logger->error("Your log error.", ['name' => 'mike']);
+        $this->logger->info("Your log message.");
+        $this->logger->warning("Your log warning.");
     }
 
-
-    /**
-     * 消费消息
-     */
-    public function consumerTask()
+    public function debuglog()
     {
-        echo "Consumer task: \n";
-        $this->taskConsumer->consume( $this->consumer );
+        $config = CommonHelper::getReturnReward('2.0.3');
+        var_dump($config);
+        return $config;
+
+//        $this->log->debug('我的测试debug', 'debug2_abc');
+//        $this->log->info('我的测试info', 'info2_abc');
+//        $this->log->error('我的测试error', 'error2_abc');
+
+//        Log::debug('hahhahh');
+//        Log::info(['name' => 'mike', 'age' => 18]);
+//        Log::error(['name' => 'mike', 'age' => 18]);
     }
 }

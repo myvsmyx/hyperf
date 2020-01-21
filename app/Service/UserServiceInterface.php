@@ -25,4 +25,19 @@ interface UserServiceInterface
      * @return mixed
      */
     public function getUserBaseInfo( int $uid );
+
+    /**
+     * 更新登录玩家信息
+     * @param array $param
+     * @return mixed
+     */
+    public function updateUserLoginInfoEvent( array $param );
+
+    /**
+     * 用户回归奖励
+     * @param int $uid
+     * @param array $param
+     * @return mixed
+     */
+    public function userReturnReward( int $uid, string $version );
 }

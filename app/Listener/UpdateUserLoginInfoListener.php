@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Listener;
 
+use App\Constants\ErrorCode;
 use App\Event\UpdateUserLoginInfo;
+use App\Exception\LoginException;
+use Hyperf\DbConnection\Db;
 use Hyperf\Event\Annotation\Listener;
 use Psr\Container\ContainerInterface;
 use Hyperf\Event\Contract\ListenerInterface;
@@ -34,7 +37,13 @@ class UpdateUserLoginInfoListener implements ListenerInterface
     public function process(object $event)
     {
         $updateInfo = $event->updateInfo;
-        echo "事件监听器返回的结果: \n";
-        var_dump($updateInfo);
+        $uid = $updateInfo['uid'] ?? null;
+        if ( is_null($uid) || !is_array($updateInfo) )
+        {
+            throw new LoginException( ErrorCode::UPDATEUSERLOGINPARAM );
+        }
+        unset($updateInfo['uid']);
+        $table = 'info'.($uid % 100);
+        DB::connection('user')->table($table)->where('uid', $uid)->update($updateInfo);
     }
 }

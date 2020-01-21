@@ -55,6 +55,10 @@ class ErrorCode extends AbstractConstants
 
     const UNPACKETFAIL = 21; //解包失败
 
+    const UPDATEUSERLOGINPARAM = 22; //更新用户登录信息错误
+
+    const LOGLEVELERROR = 23; //log等级错误
+
 
     static $errorMsg = [
         self::SERVER_ERROR => 'parameter error',
@@ -73,6 +77,8 @@ class ErrorCode extends AbstractConstants
         self::PACKETHEADERERR => 'packet header fail',
         self::UNPACKETFAIL => 'unpacket fail',
         self::ACCOUNTUNAVAILABLE => 'account unavailable',
+        self::UPDATEUSERLOGINPARAM => 'update user login params error',
+        self::LOGLEVELERROR => 'log level error',
     ];
 
     /**
